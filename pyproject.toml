@@ -1,0 +1,16 @@
+[project]
+name = "yt-dlp-jsc-youtubei"
+version = "0.0.1"
+description = "JS CHALLENGE PROVIDER based on youtubei.js"
+license = "UNLICENSE"
+requires-python = ">=3.8"
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+[tool.poetry]
+packages = [
+ { include = "yt_dlp_plugins/extractor/yt_dlp_jsc_youtubei.py" },
+]
+exclude = [
+ { path = "*/.git", format = ["sdist", "wheel"] }
+]
