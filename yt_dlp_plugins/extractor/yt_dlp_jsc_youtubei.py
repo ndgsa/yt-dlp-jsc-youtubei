@@ -218,7 +218,7 @@ class YoutubeiJCP(JsChallengeProvider):
 
         grouped: dict[str, list[JsChallengeRequest]] = collections.defaultdict(list)
         for request in requests:
-            if len(request.input.challenges[0]) >= 255:
+            if len(request.input.challenges) > 0 and len(request.input.challenges[0]) >= 255:
                 raise JsChallengeProviderRejectedRequest('Challenges longer than 255 is not supported', expected=True)
             grouped[request.video_id].append(request) # group by video_id
 
