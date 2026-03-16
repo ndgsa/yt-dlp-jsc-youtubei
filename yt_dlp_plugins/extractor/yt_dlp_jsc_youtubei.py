@@ -42,7 +42,7 @@ class YoutubeiJCP(JsChallengeProvider):
 
     _SUPPORTED_TYPES = [JsChallengeType.N, JsChallengeType.SIG]
 
-    youtubei_version = '16.0.1'
+    youtubei_version = '17.0.1'
 
     USER_HOME = os.path.expanduser('~')
     js_cachedir = os.path.join(USER_HOME, '.cache', 'yt-dlp', 'yt-dlp-jsc-youtubei')
@@ -155,7 +155,7 @@ class YoutubeiJCP(JsChallengeProvider):
         decryption_function = None
         decrypt_function_file = os.path.join(self.js_cachedir, f'''signature_func_{player_version}.js''')
 
-        additional_js_code = '''(function () {let args; let challenges = []; let result = {}; result['type']='result'; result['responses'] = []; if (typeof Deno !== 'undefined'){args = Deno.args;} else if (typeof Bun !== 'undefined'){args = Bun.args;} else {args = process.argv.slice(2);}; if (args.length === 1){challenges = JSON.parse(args[0]);} else {console.log(JSON.stringify(result)); return;}; try{for(const challenge of challenges){let challenge_result = {}; if (challenge['type'] === 'n'){for(const n_c of challenge['challenges']){challenge_result[n_c]=exportedVars.nFunction(n_c);};} else if (challenge['type'] === 'sig'){for(const s_c of challenge['challenges']){challenge_result[s_c]=exportedVars.sigFunction(s_c);};}; result['responses'].push({'type':'result','data':challenge_result});};} catch (decryption_error){console.error(decryption_error);return;}; console.log(JSON.stringify(result));})();'''
+        additional_js_code = '''function decipher_signatures(n="",sp="",s=""){const mockStreamingURL="https://ytjs.googlevideo.com/videoplayback?expire=1234567890&"+"n="+encodeURIComponent(n); const urlCtorFunction=exportedVars.nsigFunction || (() => {throw new Error('No n/sig decipher function extracted')}); const urlCtor=urlCtorFunction(mockStreamingURL,sp,encodeURIComponent(s)); for(const prop of Object.getOwnPropertyNames(Object.getPrototypeOf(urlCtor))){if(['constructor','clone','set','get'].includes(prop)){continue;}; if(typeof urlCtor[prop] === 'function'){urlCtor[prop]();};}; const sigResult=urlCtor.get(sp); const nResult=urlCtor.get('n'); return {sig: sigResult ? decodeURIComponent(sigResult) : undefined, n: nResult ? decodeURIComponent(nResult) : undefined};};\n(function () {let args; let challenges = []; let result = {}; result['type']='result'; result['responses'] = []; if (typeof Deno !== 'undefined'){args = Deno.args;} else if (typeof Bun !== 'undefined'){args = Bun.args;} else {args = process.argv.slice(2);}; if (args.length === 1){challenges = JSON.parse(args[0]);} else {console.log(JSON.stringify(result)); return;}; try{for(const challenge of challenges){let challenge_result = {}; if (challenge['type'] === 'n'){for(const n_c of challenge['challenges']){challenge_result[n_c]=decipher_signatures(n_c).n;};} else if (challenge['type'] === 'sig'){for(const s_c of challenge['challenges']){challenge_result[s_c]=decipher_signatures('','sig',s_c).sig;};}; result['responses'].push({'type':'result','data':challenge_result});};} catch (decryption_error){console.error(decryption_error);return;}; console.log(JSON.stringify(result));})();'''
 
         if not os.path.isfile(decrypt_function_file):
             youtubei_file = self._get_youtubei(self.youtubei_version, use_js_runtime=True)
