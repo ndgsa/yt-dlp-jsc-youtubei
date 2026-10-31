@@ -124,7 +124,7 @@ class YoutubeiJCP(JsChallengeProvider):
         '''Download youtubei.js library if not exists.'''
         youtubei_url = f"https://cdn.jsdelivr.net/npm/youtubei.js@{youtubei_version}/bundle/browser.min.js"
         if use_js_runtime: youtubei_name = 'youtubei_' + youtubei_version.replace('.', '') + '.mjs'
-        else: youtubei_name = 'youtubei.min.js'
+        else: youtubei_name = 'youtubei.min.mjs'
         youtubei_file = os.path.join(self.js_cachedir, youtubei_name)
         # youtubei_file = os.path.join(os.path.dirname(__file__), youtubei_name)
 
@@ -139,7 +139,10 @@ class YoutubeiJCP(JsChallengeProvider):
             if content:
                 with open(youtubei_file, 'w', encoding='utf-8') as file:
                     self.logger.debug(f'Saving youtubei.js library to "{youtubei_file}"')
-                    file.write(f"{content}\n{additional_js_code}")
+                    if youtubei_name == 'youtubei.min.mjs':
+                        file.write(content)
+                    else:
+                        file.write(f"{content}\n{additional_js_code}")
             else:
                 raise JsChallengeProviderError(f'Unable to download youtubei.js library')
 
@@ -148,6 +151,12 @@ class YoutubeiJCP(JsChallengeProvider):
             raise JsChallengeProviderError(f'{youtubei_name} library not available')
         else:
             self.logger.debug(f'Using {youtubei_name} library')
+
+        # with open(youtubei_file, 'r', encoding='utf-8') as file:
+            # if youtubei_name != 'youtubei.min.mjs' and additional_js_code not in file.read():
+                # with open(youtubei_file, 'a', encoding='utf-8') as file2:
+                    # print(f'Append additional_js_code to "{youtubei_file}"')
+                    # file2.write(f"\n{additional_js_code}")
 
         return youtubei_file
 
