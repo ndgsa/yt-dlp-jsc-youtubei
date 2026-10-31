@@ -42,7 +42,7 @@ class YoutubeiJCP(JsChallengeProvider):
 
     _SUPPORTED_TYPES = [JsChallengeType.N, JsChallengeType.SIG]
 
-    youtubei_version = '17.0.1'
+    youtubei_version = '18.3.0'
 
     USER_HOME = os.path.expanduser('~')
     js_cachedir = os.path.join(USER_HOME, '.cache', 'yt-dlp', 'yt-dlp-jsc-youtubei')
