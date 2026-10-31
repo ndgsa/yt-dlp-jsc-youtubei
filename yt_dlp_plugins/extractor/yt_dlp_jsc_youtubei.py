@@ -24,6 +24,7 @@ import re
 import typing
 import collections
 import functools
+import hashlib
 
 
 @register_provider
@@ -43,6 +44,7 @@ class YoutubeiJCP(JsChallengeProvider):
     _SUPPORTED_TYPES = [JsChallengeType.N, JsChallengeType.SIG]
 
     youtubei_version = '18.3.0'
+    youtubei_lib_sha256 = 'e6401751a6f85e3a1274596253da8472df7192bf3e73eb641dd3c567dc9e4760'
 
     USER_HOME = os.path.expanduser('~')
     js_cachedir = os.path.join(USER_HOME, '.cache', 'yt-dlp', 'yt-dlp-jsc-youtubei')
@@ -120,7 +122,7 @@ class YoutubeiJCP(JsChallengeProvider):
         return (stdout, stderr, proc.returncode)
 
     @functools.lru_cache(maxsize=1)
-    def _get_youtubei(self, youtubei_version, use_js_runtime=False):
+    def _get_youtubei(self, youtubei_version, youtubei_lib_sha256, use_js_runtime=False):
         '''Download youtubei.js library if not exists.'''
         youtubei_url = f"https://cdn.jsdelivr.net/npm/youtubei.js@{youtubei_version}/bundle/browser.min.js"
         if use_js_runtime: youtubei_name = 'youtubei_' + youtubei_version.replace('.', '') + '.mjs'
@@ -137,6 +139,8 @@ class YoutubeiJCP(JsChallengeProvider):
         if not os.path.isfile(youtubei_file):
             content = self.ie._download_webpage(youtubei_url, None, note=f'Downloading youtubei.js library from url "{youtubei_url}"')
             if content:
+                if hashlib.sha256(content.encode('utf-8')).hexdigest() != youtubei_lib_sha256:
+                    raise JsChallengeProviderError(f"Error: '{youtubei_url}' has wrong hash: {hashlib.sha256(content.encode('utf-8')).hexdigest()}")
                 with open(youtubei_file, 'w', encoding='utf-8') as file:
                     self.logger.debug(f'Saving youtubei.js library to "{youtubei_file}"')
                     if youtubei_name == 'youtubei.min.mjs':
@@ -167,7 +171,7 @@ class YoutubeiJCP(JsChallengeProvider):
         additional_js_code = '''function decipher_signatures(n="",sp="",s=""){const mockStreamingURL="https://ytjs.googlevideo.com/videoplayback?expire=1234567890&"+"n="+encodeURIComponent(n); const urlCtorFunction=exportedVars.nsigFunction || (() => {throw new Error('No n/sig decipher function extracted')}); const urlCtor=urlCtorFunction(mockStreamingURL,sp,encodeURIComponent(s)); for(const prop of Object.getOwnPropertyNames(Object.getPrototypeOf(urlCtor))){if(['constructor','clone','set','get'].includes(prop)){continue;}; if(typeof urlCtor[prop] === 'function'){urlCtor[prop]();};}; const sigResult=urlCtor.get(sp); const nResult=urlCtor.get('n'); return {sig: sigResult ? decodeURIComponent(sigResult) : undefined, n: nResult ? decodeURIComponent(nResult) : undefined};};\n(function () {let args; let challenges = []; let result = {}; result['type']='result'; result['responses'] = []; if (typeof Deno !== 'undefined'){args = Deno.args;} else if (typeof Bun !== 'undefined'){args = Bun.args;} else {args = process.argv.slice(2);}; if (args.length === 1){challenges = JSON.parse(args[0]);} else {console.log(JSON.stringify(result)); return;}; try{for(const challenge of challenges){let challenge_result = {}; if (challenge['type'] === 'n'){for(const n_c of challenge['challenges']){challenge_result[n_c]=decipher_signatures(n_c).n;};} else if (challenge['type'] === 'sig'){for(const s_c of challenge['challenges']){challenge_result[s_c]=decipher_signatures('','sig',s_c).sig;};}; result['responses'].push({'type':'result','data':challenge_result});};} catch (decryption_error){console.error(decryption_error);return;}; console.log(JSON.stringify(result));})();'''
 
         if not os.path.isfile(decrypt_function_file):
-            youtubei_file = self._get_youtubei(self.youtubei_version, use_js_runtime=True)
+            youtubei_file = self._get_youtubei(self.youtubei_version, self.youtubei_lib_sha256, use_js_runtime=True)
             self.logger.debug(f'Extracting decryption function for player {player_version} using {os.path.basename(youtubei_file)}')
             stdout, stderr, proc_returncode = self._run_js_runtime(youtubei_file, player_version)
             try: output = json.loads(stdout)
