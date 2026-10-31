@@ -29,7 +29,7 @@ import hashlib
 
 @register_provider
 class YoutubeiJCP(JsChallengeProvider):
-    PROVIDER_VERSION = "0.0.1"
+    PROVIDER_VERSION = "0.0.2"
     PROVIDER_NAME = "yt-dlp-jsc-youtubei"
     BUG_REPORT_LOCATION = 'https://github.com/ndgsa/yt-dlp-jsc-youtubei'
 
